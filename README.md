@@ -17,8 +17,14 @@ A PyTorch implementation for generating protein embeddings using the ESM-C (Evol
 git clone https://github.com/leannmlindsey/esmc_protein_embed.git
 cd esmc_protein_embed
 
-# Create conda environment from yml file
-conda env create -f environment.yml
+# Create conda environment 
+conda create -n esmc python=3.10
+conda activate esmc
+pip install torch transformers
+pip install numpy pandas scikit-learn
+pip install tqdm
+pip install esm
+
 
 # Activate the environment
 conda activate esmc
