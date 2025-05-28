@@ -14,8 +14,8 @@ A PyTorch implementation for generating protein embeddings using the ESM-C (Evol
 
 ```bash
 # Clone the repository
-git clone <your-repo-url>
-cd <repo-name>
+git clone https://github.com/leannmlindsey/esmc_protein_embed.git
+cd esmc_protein_embed
 
 # Install dependencies
 pip install -r requirements.txt
