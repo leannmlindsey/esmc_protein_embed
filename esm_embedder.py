@@ -19,6 +19,19 @@ class ESMCEmbedder:
         # Process sequences one at a time (ESM-C API requirement)
         for seq_id, seq_str in tqdm(sequences, desc="Generating embeddings"):
             try:
+                # Ensure sequence is a string
+                if not isinstance(seq_str, str):
+                    seq_str = str(seq_str)
+                
+                # Clean sequence - remove any whitespace and ensure uppercase
+                seq_str = seq_str.strip().upper()
+                
+                # Validate sequence contains only valid amino acids
+                valid_aa = set('ACDEFGHIKLMNPQRSTVWY')
+                if not all(aa in valid_aa for aa in seq_str):
+                    print(f"Warning: Sequence {seq_id} contains non-standard amino acids, skipping")
+                    continue
+                
                 with torch.no_grad():
                     # Create ESMProtein object
                     protein = ESMProtein(sequence=seq_str)
@@ -49,6 +62,8 @@ class ESMCEmbedder:
                     
             except Exception as e:
                 print(f"Error processing sequence {seq_id}: {str(e)}")
+                import traceback
+                traceback.print_exc()
                 continue
         
         return embeddings
