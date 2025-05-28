@@ -29,8 +29,6 @@ pip install seaborn
 pip install umap-learn
 
 
-# Activate the environment
-conda activate esmc
 ```
 
 ## Usage
