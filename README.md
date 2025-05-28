@@ -72,6 +72,30 @@ embedder = ESMCEmbedder(device='cpu')
 - Transformers 4.30+
 - CUDA-capable GPU (recommended)
 
+## Similarity Calculation
+
+The repository includes a script to calculate cosine similarities between two sets of embeddings (locks and keys), grouped by sequence ID prefix.
+
+### Usage
+
+```bash
+python calculate_similarity.py --locks_file locks_embeddings.npz --keys_file keys_embeddings.npz --output_file similarities.csv
+```
+
+### Features
+
+- Automatically groups sequences by prefix (e.g., GCA_947662875.1_04372 and GCA_947662875.1_03910 are in the same group)
+- Only calculates similarities within matching groups
+- Marks the top scoring key for each lock
+- Outputs CSV with columns: group, lock_id, key_id, similarity, is_top_score
+
+### Command Line Arguments
+
+- `--locks_file`: Path to locks embeddings file (required)
+- `--keys_file`: Path to keys embeddings file (required)
+- `--output_file`: Path to save similarity scores CSV (required)
+- `--top_k`: Number of top scores to mark per lock (default: 1)
+
 ## License
 
 MIT License
