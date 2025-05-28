@@ -24,6 +24,9 @@ pip install torch transformers
 pip install numpy pandas scikit-learn
 pip install tqdm
 pip install esm
+pip install matplotlib
+pip install seaborn
+pip install umap-learn
 
 
 # Activate the environment
@@ -103,6 +106,39 @@ python calculate_similarity.py --locks_file locks_embeddings.npz --keys_file key
 - `--keys_file`: Path to keys embeddings file (required)
 - `--output_file`: Path to save similarity scores CSV (required)
 - `--top_k`: Number of top scores to mark per lock (default: 1)
+
+## UMAP Visualization
+
+Visualize protein embeddings using UMAP dimensionality reduction, colored by lock/key sets or sequence groups.
+
+### Usage
+
+```bash
+# Basic visualization colored by lock/key
+python visualize_embeddings.py --embeddings locks.npz keys.npz --labels locks keys --output umap_plot.png
+
+# Include group-based coloring
+python visualize_embeddings.py --embeddings locks.npz keys.npz --labels locks keys --output umap_plot.png --group_by_prefix
+```
+
+### Features
+
+- UMAP dimensionality reduction for visualization
+- Color coding by lock/key labels
+- Optional coloring by sequence group prefix
+- Exports UMAP coordinates to CSV
+- Customizable UMAP parameters
+
+### Command Line Arguments
+
+- `--embeddings`: Paths to embedding files (space-separated)
+- `--labels`: Labels for each embedding file (e.g., locks keys)
+- `--output`: Output plot file (supports png, pdf, svg)
+- `--n_neighbors`: UMAP n_neighbors parameter (default: 15)
+- `--min_dist`: UMAP min_dist parameter (default: 0.1)
+- `--metric`: Distance metric for UMAP (default: cosine)
+- `--group_by_prefix`: Create additional plot colored by group prefix
+- `--figsize`: Figure size as width height (default: 12 8)
 
 ## License
 
