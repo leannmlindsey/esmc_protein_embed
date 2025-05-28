@@ -26,12 +26,9 @@ class ESMCEmbedder:
                 # Clean sequence - remove any whitespace and ensure uppercase
                 seq_str = seq_str.strip().upper()
                 
-                # Validate sequence contains only valid amino acids
-                # Include all standard amino acids plus common ambiguous codes
-                valid_aa = set('ACDEFGHIKLMNPQRSTVWYX')  # X is for unknown/any amino acid
-                if not all(aa in valid_aa for aa in seq_str):
-                    invalid_aas = set(aa for aa in seq_str if aa not in valid_aa)
-                    print(f"Warning: Sequence {seq_id} contains non-standard amino acids: {invalid_aas}, skipping")
+                # Skip empty sequences
+                if not seq_str:
+                    print(f"Warning: Empty sequence for {seq_id}, skipping")
                     continue
                 
                 with torch.no_grad():

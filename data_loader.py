@@ -4,9 +4,10 @@ from typing import List, Tuple
 
 class ProteinSequenceDataset(Dataset):
     def __init__(self, file_path: str, sequence_col: str = 'sequence', id_col: str = 'id'):
-        self.df = pd.read_csv(file_path, sep='\t')
-        self.sequences = self.df[sequence_col].tolist()
-        self.ids = self.df[id_col].tolist() if id_col in self.df.columns else list(range(len(self.sequences)))
+        self.df = pd.read_csv(file_path, sep='\t', dtype=str)  # Force all columns to be read as strings
+        # Ensure sequences are strings and clean them
+        self.sequences = [str(seq).strip() for seq in self.df[sequence_col].tolist()]
+        self.ids = [str(id_).strip() for id_ in self.df[id_col].tolist()] if id_col in self.df.columns else list(range(len(self.sequences)))
         
     def __len__(self) -> int:
         return len(self.sequences)
