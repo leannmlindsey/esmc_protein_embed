@@ -1,37 +1,58 @@
 import torch
-from transformers import AutoTokenizer, EsmModel
+from esm.models.esmc import ESMC
+from esm.sdk.api import ESMProtein, LogitsConfig
 from typing import List, Dict, Tuple
 import numpy as np
 from tqdm import tqdm
 
 class ESMCEmbedder:
-    def __init__(self, model_name: str = "EvolutionaryScale/esmc-300m-2024-12", device: str = None):
+    def __init__(self, model_name: str = "esmc_300m", device: str = None):
         self.device = device or ('cuda' if torch.cuda.is_available() else 'cpu')
-        self.tokenizer = AutoTokenizer.from_pretrained(model_name)
-        self.model = EsmModel.from_pretrained(model_name)
-        self.model = self.model.to(self.device)
+        print(f"Loading ESM-C model on {self.device}...")
+        self.model = ESMC.from_pretrained(model_name).to(self.device)
         self.model.eval()
+        print("Model loaded successfully!")
     
     def embed_sequences(self, sequences: List[Tuple[str, str]], batch_size: int = 8) -> Dict[str, np.ndarray]:
         embeddings = {}
         
-        for i in tqdm(range(0, len(sequences), batch_size), desc="Generating embeddings"):
-            batch = sequences[i:i + batch_size]
-            seq_ids = [item[0] for item in batch]
-            seq_strs = [item[1] for item in batch]
-            
-            with torch.no_grad():
-                inputs = self.tokenizer(seq_strs, return_tensors="pt", padding=True, truncation=True, max_length=1024)
-                inputs = {k: v.to(self.device) for k, v in inputs.items()}
-                
-                outputs = self.model(**inputs)
-                
-                for j, seq_id in enumerate(seq_ids):
-                    seq_len = (inputs['attention_mask'][j] == 1).sum()
-                    seq_embedding = outputs.last_hidden_state[j, :seq_len].cpu().numpy()
-                    embeddings[seq_id] = seq_embedding.mean(axis=0)
+        # Process sequences one at a time (ESM-C API requirement)
+        for seq_id, seq_str in tqdm(sequences, desc="Generating embeddings"):
+            try:
+                with torch.no_grad():
+                    # Create ESMProtein object
+                    protein = ESMProtein(sequence=seq_str)
+                    
+                    # Encode protein to tensor representation
+                    protein_tensor = self.model.encode(protein)
+                    
+                    # Get embeddings through logits with embedding flag
+                    logits_output = self.model.logits(
+                        protein_tensor,
+                        LogitsConfig(sequence=True, return_embeddings=True)
+                    )
+                    
+                    # Extract embeddings
+                    embedding = logits_output.embeddings
+                    
+                    # Convert to numpy and average pool
+                    if isinstance(embedding, torch.Tensor):
+                        embedding = embedding.cpu().numpy()
+                    
+                    # Handle different tensor shapes
+                    if len(embedding.shape) == 3:  # [batch, seq_len, hidden_dim]
+                        embedding = embedding[0].mean(axis=0)
+                    elif len(embedding.shape) == 2:  # [seq_len, hidden_dim]
+                        embedding = embedding.mean(axis=0)
+                    
+                    embeddings[seq_id] = embedding
+                    
+            except Exception as e:
+                print(f"Error processing sequence {seq_id}: {str(e)}")
+                continue
         
         return embeddings
     
     def get_embedding_dim(self) -> int:
-        return self.model.config.hidden_size
+        # ESM-C 300M has 960 hidden dimensions
+        return 960
