@@ -18,6 +18,7 @@ git clone https://github.com/leannmlindsey/esmc_protein_embed.git
 cd esmc_protein_embed
 
 # Install dependencies
+conda env create -n esmc
 pip install -r requirements.txt
 ```
 
