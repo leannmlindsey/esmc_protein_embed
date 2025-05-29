@@ -117,13 +117,17 @@ python visualize_embeddings.py --embeddings locks.npz keys.npz --labels locks ke
 
 # Include group-based coloring
 python visualize_embeddings.py --embeddings locks.npz keys.npz --labels locks keys --output umap_plot.png --group_by_prefix
+
+# Create grid visualization with individual group subplots
+python visualize_embeddings.py --embeddings locks.npz keys.npz --labels locks keys --output umap_plot.png --grid_subplots
 ```
 
 ### Features
 
 - UMAP dimensionality reduction for visualization
-- Color coding by lock/key labels
+- Color coding by lock/key labels (locks as squares, keys as circles)
 - Optional coloring by sequence group prefix
+- Grid visualization mode showing first 36 groups individually
 - Exports UMAP coordinates to CSV
 - Customizable UMAP parameters
 
@@ -136,6 +140,7 @@ python visualize_embeddings.py --embeddings locks.npz keys.npz --labels locks ke
 - `--min_dist`: UMAP min_dist parameter (default: 0.1)
 - `--metric`: Distance metric for UMAP (default: cosine)
 - `--group_by_prefix`: Create additional plot colored by group prefix
+- `--grid_subplots`: Create 6x6 grid showing individual groups
 - `--figsize`: Figure size as width height (default: 12 8)
 
 ## Filter Single Pairs

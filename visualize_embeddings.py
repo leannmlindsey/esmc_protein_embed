@@ -38,7 +38,7 @@ def get_group_prefix(seq_id):
 
 def create_umap_visualization(embeddings_files, labels, output_file, 
                             n_neighbors=15, min_dist=0.1, metric='cosine',
-                            group_by_prefix=False, figsize=(12, 8)):
+                            group_by_prefix=False, figsize=(12, 8), grid_subplots=False):
     """Create UMAP visualization of embeddings"""
     
     # Load all embeddings
@@ -66,58 +66,128 @@ def create_umap_visualization(embeddings_files, labels, output_file,
     umap = UMAP(n_neighbors=n_neighbors, min_dist=min_dist, metric=metric, random_state=42)
     embeddings_2d = umap.fit_transform(X)
     
-    # Create figure
-    fig, axes = plt.subplots(1, 2 if group_by_prefix else 1, figsize=figsize)
-    if not group_by_prefix:
-        axes = [axes]
-    
-    # Plot 1: Color by lock/key label
-    ax = axes[0]
-    unique_labels = list(set(all_labels))
-    colors = sns.color_palette("husl", len(unique_labels))
-    
-    for i, label in enumerate(unique_labels):
-        mask = [l == label for l in all_labels]
-        points = embeddings_2d[mask]
-        ax.scatter(points[:, 0], points[:, 1], c=[colors[i]], label=label, alpha=0.6, s=50)
-    
-    ax.set_xlabel('UMAP 1')
-    ax.set_ylabel('UMAP 2')
-    ax.set_title('UMAP Visualization - Colored by Lock/Key')
-    ax.legend()
-    ax.grid(True, alpha=0.3)
-    
-    # Plot 2: Color by group prefix (if requested)
-    if group_by_prefix:
-        ax = axes[1]
-        unique_groups = list(set(all_groups))
-        n_groups = len(unique_groups)
+    # If grid_subplots is requested, create the grid visualization
+    if grid_subplots:
+        # Create main figure with all points
+        fig1, ax1 = plt.subplots(1, 1, figsize=(10, 8))
         
-        # Use different color palette for groups
-        if n_groups <= 20:
-            colors = sns.color_palette("tab20", n_groups)
-        else:
-            colors = sns.color_palette("husl", n_groups)
+        unique_labels = list(set(all_labels))
+        colors = {'locks': 'blue', 'keys': 'red'}  # Fixed colors for consistency
+        markers = {'locks': 's', 'keys': 'o'}  # Square for locks, circle for keys
         
-        group_to_color = {group: colors[i] for i, group in enumerate(unique_groups)}
-        
-        # Plot each group
-        for group in unique_groups:
-            mask = [g == group for g in all_groups]
+        for label in unique_labels:
+            mask = [l == label for l in all_labels]
             points = embeddings_2d[mask]
-            ax.scatter(points[:, 0], points[:, 1], c=[group_to_color[group]], 
-                      label=group if n_groups <= 10 else '', alpha=0.6, s=50)
+            ax1.scatter(points[:, 0], points[:, 1], c=colors.get(label, 'gray'), 
+                       marker=markers.get(label, 'o'), label=label, alpha=0.6, s=50)
+        
+        ax1.set_xlabel('UMAP 1')
+        ax1.set_ylabel('UMAP 2')
+        ax1.set_title('UMAP Visualization - All Lock/Key Pairs')
+        ax1.legend()
+        ax1.grid(True, alpha=0.3)
+        
+        # Save main figure
+        main_output = Path(output_file).with_suffix('.main.png')
+        plt.tight_layout()
+        plt.savefig(main_output, dpi=300, bbox_inches='tight')
+        print(f"Main visualization saved to {main_output}")
+        plt.close()
+        
+        # Create 6x6 grid of individual groups
+        unique_groups = sorted(list(set(all_groups)))[:36]  # Take first 36 groups
+        n_groups_to_plot = min(36, len(unique_groups))
+        
+        fig2, axes = plt.subplots(6, 6, figsize=(20, 20))
+        axes = axes.flatten()
+        
+        for idx, group in enumerate(unique_groups[:n_groups_to_plot]):
+            ax = axes[idx]
+            
+            # Get points for this group
+            group_mask = [g == group for g in all_groups]
+            group_points = embeddings_2d[group_mask]
+            group_labels = [all_labels[i] for i, m in enumerate(group_mask) if m]
+            
+            # Plot with consistent colors and markers
+            for label in set(group_labels):
+                label_mask = [l == label for l in group_labels]
+                points = group_points[label_mask]
+                ax.scatter(points[:, 0], points[:, 1], c=colors.get(label, 'gray'),
+                          marker=markers.get(label, 'o'), label=label, alpha=0.8, s=100)
+            
+            ax.set_title(f'{group}', fontsize=8)
+            ax.set_xticks([])
+            ax.set_yticks([])
+            ax.grid(True, alpha=0.3)
+            
+            # Add legend only to first subplot
+            if idx == 0:
+                ax.legend(fontsize=6)
+        
+        # Hide empty subplots
+        for idx in range(n_groups_to_plot, 36):
+            axes[idx].set_visible(False)
+        
+        plt.tight_layout()
+        grid_output = Path(output_file).with_suffix('.grid.png')
+        plt.savefig(grid_output, dpi=300, bbox_inches='tight')
+        print(f"Grid visualization saved to {grid_output}")
+        plt.close()
+        
+    else:
+        # Original visualization code
+        fig, axes = plt.subplots(1, 2 if group_by_prefix else 1, figsize=figsize)
+        if not group_by_prefix:
+            axes = [axes]
+        
+        # Plot 1: Color by lock/key label
+        ax = axes[0]
+        unique_labels = list(set(all_labels))
+        colors = sns.color_palette("husl", len(unique_labels))
+        
+        for i, label in enumerate(unique_labels):
+            mask = [l == label for l in all_labels]
+            points = embeddings_2d[mask]
+            ax.scatter(points[:, 0], points[:, 1], c=[colors[i]], label=label, alpha=0.6, s=50)
         
         ax.set_xlabel('UMAP 1')
         ax.set_ylabel('UMAP 2')
-        ax.set_title('UMAP Visualization - Colored by Group Prefix')
-        if n_groups <= 10:
-            ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
+        ax.set_title('UMAP Visualization - Colored by Lock/Key')
+        ax.legend()
         ax.grid(True, alpha=0.3)
-    
-    plt.tight_layout()
-    plt.savefig(output_file, dpi=300, bbox_inches='tight')
-    print(f"Visualization saved to {output_file}")
+        
+        # Plot 2: Color by group prefix (if requested)
+        if group_by_prefix:
+            ax = axes[1]
+            unique_groups = list(set(all_groups))
+            n_groups = len(unique_groups)
+            
+            # Use different color palette for groups
+            if n_groups <= 20:
+                colors = sns.color_palette("tab20", n_groups)
+            else:
+                colors = sns.color_palette("husl", n_groups)
+            
+            group_to_color = {group: colors[i] for i, group in enumerate(unique_groups)}
+            
+            # Plot each group
+            for group in unique_groups:
+                mask = [g == group for g in all_groups]
+                points = embeddings_2d[mask]
+                ax.scatter(points[:, 0], points[:, 1], c=[group_to_color[group]], 
+                          label=group if n_groups <= 10 else '', alpha=0.6, s=50)
+            
+            ax.set_xlabel('UMAP 1')
+            ax.set_ylabel('UMAP 2')
+            ax.set_title('UMAP Visualization - Colored by Group Prefix')
+            if n_groups <= 10:
+                ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
+            ax.grid(True, alpha=0.3)
+        
+        plt.tight_layout()
+        plt.savefig(output_file, dpi=300, bbox_inches='tight')
+        print(f"Visualization saved to {output_file}")
     
     # Save UMAP coordinates
     coords_file = Path(output_file).with_suffix('.coords.csv')
@@ -148,6 +218,7 @@ def main():
     parser.add_argument('--min_dist', type=float, default=0.1, help='UMAP min_dist parameter')
     parser.add_argument('--metric', type=str, default='cosine', help='Distance metric for UMAP')
     parser.add_argument('--group_by_prefix', action='store_true', help='Also create plot colored by group prefix')
+    parser.add_argument('--grid_subplots', action='store_true', help='Create grid of individual group subplots')
     parser.add_argument('--figsize', nargs=2, type=int, default=[12, 8], help='Figure size (width height)')
     
     args = parser.parse_args()
@@ -163,6 +234,7 @@ def main():
         min_dist=args.min_dist,
         metric=args.metric,
         group_by_prefix=args.group_by_prefix,
+        grid_subplots=args.grid_subplots,
         figsize=tuple(args.figsize)
     )
 
