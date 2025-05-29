@@ -84,7 +84,11 @@ def create_umap_visualization(embeddings_files, labels, output_file,
         
         ax1.set_xlabel('UMAP 1')
         ax1.set_ylabel('UMAP 2')
-        ax1.set_title('UMAP Visualization - All Lock/Key Pairs')
+        # Determine title based on labels
+        if len(unique_labels) == 1:
+            ax1.set_title(f'UMAP Visualization - {unique_labels[0].capitalize()} Only')
+        else:
+            ax1.set_title('UMAP Visualization - All Lock/Key Pairs')
         ax1.legend()
         ax1.grid(True, alpha=0.3)
         
@@ -167,7 +171,11 @@ def create_umap_visualization(embeddings_files, labels, output_file,
         
         ax.set_xlabel('UMAP 1')
         ax.set_ylabel('UMAP 2')
-        ax.set_title('UMAP Visualization - Colored by Lock/Key')
+        # Determine title based on labels
+        if len(unique_labels) == 1:
+            ax.set_title(f'UMAP Visualization - {unique_labels[0].capitalize()} Only')
+        else:
+            ax.set_title('UMAP Visualization - Colored by Lock/Key')
         ax.legend()
         ax.grid(True, alpha=0.3)
         

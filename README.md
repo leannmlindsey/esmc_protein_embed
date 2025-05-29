@@ -1,14 +1,15 @@
 # ESM-C Protein Embeddings
 
-A PyTorch implementation for generating protein embeddings using the ESM-C (EvolutionaryScale/esmc-300m-2024-12) model.
+A comprehensive PyTorch pipeline for generating, analyzing, and visualizing protein embeddings using ESM-C models from EvolutionaryScale.
 
-## Features
+## Overview
 
-- Load protein sequences from tab-delimited files
-- Generate embeddings using ESM-C model
-- Batch processing for efficient GPU utilization
-- Multiple output formats (npz, pkl, npy)
-- GPU support with automatic device detection
+This repository provides tools for:
+- **Embedding Generation**: Convert protein sequences to embeddings using ESM-C models
+- **Data Filtering**: Select specific subsets of sequences for analysis
+- **Similarity Analysis**: Calculate pairwise similarities between protein sets
+- **Visualization**: Create UMAP visualizations of embedding spaces
+- **Clustering**: Extract and analyze clusters from embeddings
 
 ## Installation
 
@@ -20,6 +21,8 @@ cd esmc_protein_embed
 # Create conda environment 
 conda create -n esmc python=3.10
 conda activate esmc
+
+# Install dependencies
 pip install torch transformers
 pip install numpy pandas scikit-learn
 pip install tqdm
@@ -27,225 +30,173 @@ pip install esm
 pip install matplotlib
 pip install seaborn
 pip install umap-learn
-
-
 ```
 
-## Usage
+## Quick Start
 
-### Basic Usage
+### 1. Generate Embeddings
 
 ```bash
+# Using default ESM-C 300M model
 python embed_proteins.py --input_file example_proteins.tsv --output_file embeddings.npz
+
+# Using ESM-C 600M model for better accuracy
+python embed_proteins.py --input_file proteins.tsv --output_file embeddings.npz --model esmc_600m
 ```
 
-### Command Line Arguments
+### 2. Visualize Embeddings
 
-- `--input_file`: Path to tab-delimited input file (required)
-- `--output_file`: Path to save embeddings (required)
+```bash
+# Visualize all embeddings
+python visualize_embeddings.py --embeddings embeddings.npz --labels proteins --output umap_plot.png
+
+# Visualize locks and keys separately
+python visualize_embeddings.py --embeddings locks.npz keys.npz --labels locks keys --output umap_plot.png --grid_subplots
+```
+
+### 3. Calculate Similarities
+
+```bash
+# Calculate similarities between lock and key sets
+python calculate_similarity.py --locks_file locks.npz --keys_file keys.npz --output_file similarities.csv
+```
+
+## Core Components
+
+### 1. Embedding Generation (`embed_proteins.py`)
+
+Converts protein sequences to high-dimensional embeddings using ESM-C models.
+
+**Features:**
+- Support for multiple ESM-C models (300M, 600M)
+- Batch processing for efficiency
+- Multiple output formats (NPZ, PKL, NPY)
+- Automatic GPU detection
+
+**Usage:**
+```bash
+python embed_proteins.py --input_file <input.tsv> --output_file <output.npz> [options]
+```
+
+**Options:**
+- `--model`: Choose ESM-C model (default: esmc_300m)
+  - `esmc_300m`: Faster, less memory
+  - `esmc_600m`: More accurate, requires more resources
+- `--batch_size`: Processing batch size (default: 8)
+- `--format`: Output format - npz, pkl, or npy
 - `--sequence_col`: Column name for sequences (default: 'sequence')
-- `--id_col`: Column name for sequence IDs (default: 'id')
-- `--batch_size`: Batch size for processing (default: 8)
-- `--format`: Output format - npz, pkl, or npy (default: 'npz')
+- `--id_col`: Column name for IDs (default: 'id')
 
-### Input File Format
+### 2. Data Filtering Tools
 
-The input file should be tab-delimited with at least two columns:
-- `id`: Unique identifier for each protein
-- `sequence`: Amino acid sequence
+#### Filter Single Pairs (`filter_single_pairs.py`)
+Extracts only groups with exactly one lock and one key sequence.
 
-Example:
+```bash
+python filter_single_pairs.py --locks_file locks.tsv --keys_file keys.tsv \
+    --output_locks filtered_locks.tsv --output_keys filtered_keys.tsv
+```
+
+#### Filter by Genomes (`filter_by_genomes.py`)
+Selects all sequences from specific genomes.
+
+```bash
+# Select 50 random genomes
+python filter_by_genomes.py --locks_file locks.tsv --keys_file keys.tsv \
+    --output_locks subset_locks.tsv --output_keys subset_keys.tsv --n_genomes 50
+
+# Select specific genomes
+python filter_by_genomes.py --locks_file locks.tsv --keys_file keys.tsv \
+    --output_locks subset_locks.tsv --output_keys subset_keys.tsv \
+    --genome_list GCA_000016305.1 GCA_000163455.1
+```
+
+### 3. Similarity Calculation (`calculate_similarity.py`)
+
+Calculates cosine similarities between lock and key embeddings within matching groups.
+
+**Features:**
+- Automatic group detection by sequence ID prefix
+- Identifies top-scoring matches
+- Outputs detailed statistics
+
+```bash
+python calculate_similarity.py --locks_file locks.npz --keys_file keys.npz \
+    --output_file similarities.csv
+```
+
+### 4. Visualization (`visualize_embeddings.py`)
+
+Creates UMAP visualizations of embedding spaces with multiple display options.
+
+**Features:**
+- Single or multiple embedding files
+- Color coding by sequence type (locks/keys)
+- Grid visualization for individual groups
+- Customizable UMAP parameters
+
+```bash
+# Basic visualization
+python visualize_embeddings.py --embeddings embeddings.npz --labels sequences \
+    --output umap_plot.png
+
+# Separate locks and keys with grid view
+python visualize_embeddings.py --embeddings locks.npz keys.npz \
+    --labels locks keys --output umap_plot.png --grid_subplots
+
+# Visualize only locks
+python visualize_embeddings.py --embeddings locks.npz --labels locks \
+    --output locks_only.png
+```
+
+**Options:**
+- `--n_neighbors`: UMAP connectivity (default: 15)
+- `--min_dist`: UMAP minimum distance (default: 0.1)
+- `--metric`: Distance metric (default: cosine)
+- `--grid_subplots`: Create 3x3 grid of individual groups
+- `--group_by_prefix`: Color by sequence group prefix
+
+### 5. Cluster Extraction (`extract_clusters.py`)
+
+Identifies and extracts clusters from UMAP coordinates.
+
+```bash
+# Using DBSCAN
+python extract_clusters.py --coords_file umap_plot.coords.csv \
+    --output_dir clusters --method dbscan --eps 0.5
+
+# Using K-means with 5 clusters
+python extract_clusters.py --coords_file umap_plot.coords.csv \
+    --output_dir clusters --method kmeans --n_clusters 5
+```
+
+## Input File Format
+
+All tools expect tab-delimited files with at least two columns:
+
 ```
 id	sequence
-protein1	MKTVRQERLKSIVRILERSKEPVSGAQLAEELSVSRQVIVQDIAYLRSLGYNIVATPRGYVLAGG
-protein2	KALTARQQEVFDLIRDHISQTGMPPTRAEIAQRLGFRSPNAAEEHLKALARKGVIEIVSGASRGIRLLQEE
+GCA_000016305.1_03570	MKTVRQERLKSIVRILERSKEPVSGAQLAEELSVSRQVIVQDIAYLRSLGYNIVATPRGYVLAGG
+GCA_000016305.1_04233	KALTARQQEVFDLIRDHISQTGMPPTRAEIAQRLGFRSPNAAEEHLKALARKGVIEIVSGASRGIRLLQEE
 ```
 
-### Output Formats
+## Output Formats
 
-1. **NPZ**: Compressed NumPy archive with embeddings keyed by protein ID
-2. **PKL**: Python pickle file containing a dictionary of embeddings
-3. **NPY**: NumPy array of embeddings with separate ID file
+- **Embeddings**: NPZ (recommended), PKL, or NPY format
+- **Similarities**: CSV with columns: group, lock_id, key_id, similarity, is_top_score
+- **Visualizations**: PNG images with optional coordinate CSV files
+- **Clusters**: Text files with sequence IDs and visualization plots
 
 ## GPU Support
 
-The code automatically detects and uses GPU if available. To force CPU usage:
-```python
-embedder = ESMCEmbedder(device='cpu')
-```
+The pipeline automatically detects and uses CUDA GPUs when available. For CPU-only processing, the code will automatically fall back to CPU mode.
 
 ## Requirements
 
 - Python 3.8+
 - PyTorch 2.0+
-- Transformers 4.30+
 - CUDA-capable GPU (recommended)
-
-## Similarity Calculation
-
-The repository includes a script to calculate cosine similarities between two sets of embeddings (locks and keys), grouped by sequence ID prefix.
-
-### Usage
-
-```bash
-python calculate_similarity.py --locks_file locks_embeddings.npz --keys_file keys_embeddings.npz --output_file similarities.csv
-```
-
-### Features
-
-- Automatically groups sequences by prefix (e.g., GCA_947662875.1_04372 and GCA_947662875.1_03910 are in the same group)
-- Only calculates similarities within matching groups
-- Marks the top scoring key for each lock
-- Outputs CSV with columns: group, lock_id, key_id, similarity, is_top_score
-
-### Command Line Arguments
-
-- `--locks_file`: Path to locks embeddings file (required)
-- `--keys_file`: Path to keys embeddings file (required)
-- `--output_file`: Path to save similarity scores CSV (required)
-- `--top_k`: Number of top scores to mark per lock (default: 1)
-
-## UMAP Visualization
-
-Visualize protein embeddings using UMAP dimensionality reduction, colored by lock/key sets or sequence groups.
-
-### Usage
-
-```bash
-# Basic visualization colored by lock/key
-python visualize_embeddings.py --embeddings locks.npz keys.npz --labels locks keys --output umap_plot.png
-
-# Include group-based coloring
-python visualize_embeddings.py --embeddings locks.npz keys.npz --labels locks keys --output umap_plot.png --group_by_prefix
-
-# Create grid visualization with individual group subplots
-python visualize_embeddings.py --embeddings locks.npz keys.npz --labels locks keys --output umap_plot.png --grid_subplots
-```
-
-### Features
-
-- UMAP dimensionality reduction for visualization
-- Color coding by lock/key labels (locks as squares, keys as circles)
-- Optional coloring by sequence group prefix
-- Grid visualization mode (3x3) showing first 9 groups with preserved global coordinates
-- Exports UMAP coordinates to CSV
-- Customizable UMAP parameters
-
-### Command Line Arguments
-
-- `--embeddings`: Paths to embedding files (space-separated)
-- `--labels`: Labels for each embedding file (e.g., locks keys)
-- `--output`: Output plot file (supports png, pdf, svg)
-- `--n_neighbors`: UMAP n_neighbors parameter (default: 15)
-- `--min_dist`: UMAP min_dist parameter (default: 0.1)
-- `--metric`: Distance metric for UMAP (default: cosine)
-- `--group_by_prefix`: Create additional plot colored by group prefix
-- `--grid_subplots`: Create 6x6 grid showing individual groups
-- `--figsize`: Figure size as width height (default: 12 8)
-
-## Filter Single Pairs
-
-Filter datasets to include only groups with exactly one lock and one key sequence.
-
-### Usage
-
-```bash
-python filter_single_pairs.py --locks_file locks.tsv --keys_file keys.tsv --output_locks filtered_locks.tsv --output_keys filtered_keys.tsv
-```
-
-### Features
-
-- Identifies groups by sequence ID prefix (everything before last underscore)
-- Filters to keep only groups with exactly 1 lock and 1 key
-- Preserves original file format
-- Provides statistics on filtering results
-
-### Command Line Arguments
-
-- `--locks_file`: Path to locks TSV file (required)
-- `--keys_file`: Path to keys TSV file (required)
-- `--output_locks`: Path for filtered locks output (required)
-- `--output_keys`: Path for filtered keys output (required)
-
-## Filter by Genomes
-
-Filter datasets to include all locks and keys from selected genomes/groups.
-
-### Usage
-
-```bash
-# Randomly select 50 genomes
-python filter_by_genomes.py --locks_file locks.tsv --keys_file keys.tsv --output_locks filtered_locks.tsv --output_keys filtered_keys.tsv --n_genomes 50
-
-# Select specific genomes
-python filter_by_genomes.py --locks_file locks.tsv --keys_file keys.tsv --output_locks filtered_locks.tsv --output_keys filtered_keys.tsv --genome_list GCA_000016305.1 GCA_000163455.1
-
-# Select genomes from a file
-python filter_by_genomes.py --locks_file locks.tsv --keys_file keys.tsv --output_locks filtered_locks.tsv --output_keys filtered_keys.tsv --genome_file genome_ids.txt
-```
-
-### Features
-
-- Select genomes randomly or by specific IDs
-- Extracts ALL locks and keys for selected genomes
-- Provides statistics on sequences per genome
-- Saves list of selected genomes for reproducibility
-
-### Output Files
-
-- Filtered lock and key TSV files
-- `selected_genomes.txt`: List of selected genome IDs
-- `genome_statistics.csv`: Statistics for each genome (number of locks/keys)
-
-### Command Line Arguments
-
-- `--locks_file`: Path to locks TSV file (required)
-- `--keys_file`: Path to keys TSV file (required)
-- `--output_locks`: Path for filtered locks output (required)
-- `--output_keys`: Path for filtered keys output (required)
-- `--n_genomes`: Number of genomes to randomly select
-- `--genome_list`: Specific genomes to select (space-separated)
-- `--genome_file`: File containing genome IDs (one per line)
-- `--random_seed`: Random seed for reproducible selection (default: 42)
-
-## Extract Clusters
-
-Extract and analyze clusters from UMAP coordinates to identify groups of similar sequences.
-
-### Usage
-
-```bash
-# Using DBSCAN (good for finding dense clusters)
-python extract_clusters.py --coords_file umap_plot.coords.csv --output_dir clusters --method dbscan --eps 0.5
-
-# Using K-means (when you know approximate number of clusters)
-python extract_clusters.py --coords_file umap_plot.coords.csv --output_dir clusters --method kmeans --n_clusters 5
-```
-
-### Features
-
-- Two clustering methods: DBSCAN and K-means
-- Automatic cluster number detection for K-means
-- Saves separate lists for each cluster
-- Generates visualization showing clusters
-- Provides statistics on cluster composition
-
-### Output Files
-
-- `clustered_data.csv`: Full data with cluster assignments
-- `cluster_X_all.txt`: All sequences in cluster X
-- `cluster_X_locks.txt`: Only lock sequences in cluster X
-- `cluster_X_keys.txt`: Only key sequences in cluster X
-- `cluster_visualization.png`: Plot showing clusters
-
-### Command Line Arguments
-
-- `--coords_file`: Path to UMAP coordinates CSV (required)
-- `--output_dir`: Directory for output files (required)
-- `--method`: Clustering method - dbscan or kmeans (default: dbscan)
-- `--eps`: DBSCAN epsilon parameter (default: 0.5)
-- `--min_samples`: DBSCAN minimum samples (default: 5)
-- `--n_clusters`: K-means cluster count (auto-detect if not specified)
+- At least 16GB RAM (32GB for larger datasets)
 
 ## License
 

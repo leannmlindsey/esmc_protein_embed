@@ -13,6 +13,8 @@ def main():
     parser.add_argument('--id_col', type=str, default='id', help='Column name for sequence IDs')
     parser.add_argument('--batch_size', type=int, default=8, help='Batch size for processing')
     parser.add_argument('--format', type=str, choices=['npz', 'pkl', 'npy'], default='npz', help='Output format')
+    parser.add_argument('--model', type=str, default='esmc_300m', 
+                       help='ESM-C model to use: esmc_300m, esmc_600m, or HuggingFace model ID (default: esmc_300m)')
     
     args = parser.parse_args()
     
@@ -24,8 +26,8 @@ def main():
         id_col=args.id_col
     )
     
-    print("Initializing ESM-C model")
-    embedder = ESMCEmbedder()
+    print(f"Initializing ESM-C model: {args.model}")
+    embedder = ESMCEmbedder(model_name=args.model)
     
     all_sequences = []
     for batch in dataloader:
