@@ -47,10 +47,13 @@ python embed_proteins.py --input_file proteins.tsv --output_file embeddings.npz 
 ### 2. Visualize Embeddings
 
 ```bash
-# Visualize all embeddings
+# Visualize all embeddings with UMAP
 python visualize_embeddings.py --embeddings embeddings.npz --labels proteins --output umap_plot.png
 
-# Visualize locks and keys separately
+# Or use t-SNE for better separation
+python visualize_embeddings.py --embeddings embeddings.npz --labels proteins --output tsne_plot.png --method tsne
+
+# Visualize locks and keys separately with grid
 python visualize_embeddings.py --embeddings locks.npz keys.npz --labels locks keys --output umap_plot.png --grid_subplots
 ```
 
@@ -127,38 +130,50 @@ python calculate_similarity.py --locks_file locks.npz --keys_file keys.npz \
 
 ### 4. Visualization (`visualize_embeddings.py`)
 
-Creates UMAP visualizations of embedding spaces with multiple display options.
+Creates UMAP or t-SNE visualizations of embedding spaces with multiple display options.
 
 **Features:**
+- Choice of UMAP or t-SNE dimensionality reduction
 - Single or multiple embedding files
 - Color coding by sequence type (locks/keys)
 - Grid visualization for individual groups
-- Customizable UMAP parameters
+- Customizable parameters for both methods
 
 ```bash
-# Basic visualization
+# Basic UMAP visualization
 python visualize_embeddings.py --embeddings embeddings.npz --labels sequences \
     --output umap_plot.png
+
+# Using t-SNE instead of UMAP
+python visualize_embeddings.py --embeddings embeddings.npz --labels sequences \
+    --output tsne_plot.png --method tsne
 
 # Separate locks and keys with grid view
 python visualize_embeddings.py --embeddings locks.npz keys.npz \
     --labels locks keys --output umap_plot.png --grid_subplots
 
-# Visualize only locks
+# t-SNE with custom parameters
 python visualize_embeddings.py --embeddings locks.npz --labels locks \
-    --output locks_only.png
+    --output tsne_locks.png --method tsne --perplexity 50 --n_iter 2000
 ```
 
 **Options:**
-- `--n_neighbors`: UMAP connectivity (default: 15)
-- `--min_dist`: UMAP minimum distance (default: 0.1)
-- `--metric`: Distance metric (default: cosine)
-- `--grid_subplots`: Create 3x3 grid of individual groups
-- `--group_by_prefix`: Color by sequence group prefix
+- `--method`: Choose 'umap' or 'tsne' (default: umap)
+- **UMAP parameters:**
+  - `--n_neighbors`: Connectivity (default: 15)
+  - `--min_dist`: Minimum distance (default: 0.1)
+- **t-SNE parameters:**
+  - `--perplexity`: Balance between local and global aspects (default: 30)
+  - `--n_iter`: Number of iterations (default: 1000)
+  - `--learning_rate`: Learning rate (default: auto)
+- **Common options:**
+  - `--metric`: Distance metric (default: cosine)
+  - `--grid_subplots`: Create 3x3 grid of individual groups
+  - `--group_by_prefix`: Color by sequence group prefix
 
 ### 5. Cluster Extraction (`extract_clusters.py`)
 
-Identifies and extracts clusters from UMAP coordinates.
+Identifies and extracts clusters from UMAP or t-SNE coordinates.
 
 ```bash
 # Using DBSCAN

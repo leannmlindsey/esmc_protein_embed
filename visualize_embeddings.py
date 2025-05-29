@@ -6,6 +6,7 @@ import pickle
 import matplotlib.pyplot as plt
 import seaborn as sns
 from umap import UMAP
+from sklearn.manifold import TSNE
 from collections import defaultdict
 import warnings
 warnings.filterwarnings('ignore')
@@ -37,9 +38,10 @@ def get_group_prefix(seq_id):
     return seq_id
 
 def create_umap_visualization(embeddings_files, labels, output_file, 
-                            n_neighbors=15, min_dist=0.1, metric='cosine',
+                            method='umap', n_neighbors=15, min_dist=0.1, metric='cosine',
+                            perplexity=30, n_iter=1000, learning_rate='auto',
                             group_by_prefix=False, figsize=(12, 8), grid_subplots=False):
-    """Create UMAP visualization of embeddings"""
+    """Create UMAP or t-SNE visualization of embeddings"""
     
     # Load all embeddings
     all_embeddings = []
@@ -61,10 +63,22 @@ def create_umap_visualization(embeddings_files, labels, output_file,
     X = np.vstack(all_embeddings)
     print(f"Total embeddings: {X.shape[0]}, Dimensions: {X.shape[1]}")
     
-    # Perform UMAP
-    print("Running UMAP...")
-    umap = UMAP(n_neighbors=n_neighbors, min_dist=min_dist, metric=metric, random_state=42)
-    embeddings_2d = umap.fit_transform(X)
+    # Perform dimensionality reduction
+    if method.lower() == 'umap':
+        print(f"Running UMAP (n_neighbors={n_neighbors}, min_dist={min_dist}, metric={metric})...")
+        reducer = UMAP(n_neighbors=n_neighbors, min_dist=min_dist, metric=metric, random_state=42)
+        embeddings_2d = reducer.fit_transform(X)
+    elif method.lower() == 'tsne':
+        print(f"Running t-SNE (perplexity={perplexity}, n_iter={n_iter}, metric={metric})...")
+        # t-SNE doesn't support all metrics that UMAP does
+        tsne_metric = 'euclidean' if metric not in ['euclidean', 'cosine'] else metric
+        if tsne_metric != metric:
+            print(f"  Note: t-SNE doesn't support {metric} metric, using {tsne_metric} instead")
+        reducer = TSNE(n_components=2, perplexity=perplexity, n_iter=n_iter, 
+                      metric=tsne_metric, learning_rate=learning_rate, random_state=42)
+        embeddings_2d = reducer.fit_transform(X)
+    else:
+        raise ValueError(f"Unknown method: {method}. Choose 'umap' or 'tsne'")
     
     # If grid_subplots is requested, create the grid visualization
     if grid_subplots:
@@ -82,13 +96,14 @@ def create_umap_visualization(embeddings_files, labels, output_file,
             ax1.scatter(points[:, 0], points[:, 1], c=[colors[label]], 
                        marker=markers.get(label, 'o'), label=label, alpha=0.6, s=50)
         
-        ax1.set_xlabel('UMAP 1')
-        ax1.set_ylabel('UMAP 2')
+        method_upper = method.upper()
+        ax1.set_xlabel(f'{method_upper} 1')
+        ax1.set_ylabel(f'{method_upper} 2')
         # Determine title based on labels
         if len(unique_labels) == 1:
-            ax1.set_title(f'UMAP Visualization - {unique_labels[0].capitalize()} Only')
+            ax1.set_title(f'{method_upper} Visualization - {unique_labels[0].capitalize()} Only')
         else:
-            ax1.set_title('UMAP Visualization - All Lock/Key Pairs')
+            ax1.set_title(f'{method_upper} Visualization - All Lock/Key Pairs')
         ax1.legend()
         ax1.grid(True, alpha=0.3)
         
@@ -131,8 +146,8 @@ def create_umap_visualization(embeddings_files, labels, output_file,
             ax.set_ylim(y_min - y_margin, y_max + y_margin)
             
             ax.set_title(f'{group}', fontsize=10, fontweight='bold')
-            ax.set_xlabel('UMAP 1', fontsize=8)
-            ax.set_ylabel('UMAP 2', fontsize=8)
+            ax.set_xlabel(f'{method_upper} 1', fontsize=8)
+            ax.set_ylabel(f'{method_upper} 2', fontsize=8)
             ax.grid(True, alpha=0.3)
             
             # Add legend only to first subplot
@@ -169,13 +184,14 @@ def create_umap_visualization(embeddings_files, labels, output_file,
             points = embeddings_2d[mask]
             ax.scatter(points[:, 0], points[:, 1], c=[colors[i]], label=label, alpha=0.6, s=50)
         
-        ax.set_xlabel('UMAP 1')
-        ax.set_ylabel('UMAP 2')
+        method_upper = method.upper()
+        ax.set_xlabel(f'{method_upper} 1')
+        ax.set_ylabel(f'{method_upper} 2')
         # Determine title based on labels
         if len(unique_labels) == 1:
-            ax.set_title(f'UMAP Visualization - {unique_labels[0].capitalize()} Only')
+            ax.set_title(f'{method_upper} Visualization - {unique_labels[0].capitalize()} Only')
         else:
-            ax.set_title('UMAP Visualization - Colored by Lock/Key')
+            ax.set_title(f'{method_upper} Visualization - Colored by Lock/Key')
         ax.legend()
         ax.grid(True, alpha=0.3)
         
@@ -200,9 +216,9 @@ def create_umap_visualization(embeddings_files, labels, output_file,
                 ax.scatter(points[:, 0], points[:, 1], c=[group_to_color[group]], 
                           label=group if n_groups <= 10 else '', alpha=0.6, s=50)
             
-            ax.set_xlabel('UMAP 1')
-            ax.set_ylabel('UMAP 2')
-            ax.set_title('UMAP Visualization - Colored by Group Prefix')
+            ax.set_xlabel(f'{method_upper} 1')
+            ax.set_ylabel(f'{method_upper} 2')
+            ax.set_title(f'{method_upper} Visualization - Colored by Group Prefix')
             if n_groups <= 10:
                 ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
             ax.grid(True, alpha=0.3)
@@ -221,7 +237,7 @@ def create_umap_visualization(embeddings_files, labels, output_file,
         'umap_2': embeddings_2d[:, 1]
     })
     df.to_csv(coords_file, index=False)
-    print(f"UMAP coordinates saved to {coords_file}")
+    print(f"{method.upper()} coordinates saved to {coords_file}")
     
     # Print statistics
     print(f"\nStatistics:")
@@ -232,13 +248,24 @@ def create_umap_visualization(embeddings_files, labels, output_file,
         print(f"{label}: {count} sequences")
 
 def main():
-    parser = argparse.ArgumentParser(description='Create UMAP visualization of protein embeddings')
+    parser = argparse.ArgumentParser(description='Create UMAP or t-SNE visualization of protein embeddings')
     parser.add_argument('--embeddings', nargs='+', required=True, help='Paths to embedding files')
     parser.add_argument('--labels', nargs='+', required=True, help='Labels for each embedding file (e.g., locks keys)')
     parser.add_argument('--output', type=str, required=True, help='Output plot file (png, pdf, svg)')
+    parser.add_argument('--method', type=str, default='umap', choices=['umap', 'tsne'], 
+                       help='Dimensionality reduction method (default: umap)')
+    
+    # UMAP parameters
     parser.add_argument('--n_neighbors', type=int, default=15, help='UMAP n_neighbors parameter')
     parser.add_argument('--min_dist', type=float, default=0.1, help='UMAP min_dist parameter')
-    parser.add_argument('--metric', type=str, default='cosine', help='Distance metric for UMAP')
+    
+    # t-SNE parameters
+    parser.add_argument('--perplexity', type=int, default=30, help='t-SNE perplexity parameter')
+    parser.add_argument('--n_iter', type=int, default=1000, help='t-SNE number of iterations')
+    parser.add_argument('--learning_rate', type=str, default='auto', help='t-SNE learning rate')
+    
+    # Common parameters
+    parser.add_argument('--metric', type=str, default='cosine', help='Distance metric')
     parser.add_argument('--group_by_prefix', action='store_true', help='Also create plot colored by group prefix')
     parser.add_argument('--grid_subplots', action='store_true', help='Create grid of individual group subplots')
     parser.add_argument('--figsize', nargs=2, type=int, default=[12, 8], help='Figure size (width height)')
@@ -252,9 +279,13 @@ def main():
         args.embeddings,
         args.labels,
         args.output,
+        method=args.method,
         n_neighbors=args.n_neighbors,
         min_dist=args.min_dist,
         metric=args.metric,
+        perplexity=args.perplexity,
+        n_iter=args.n_iter,
+        learning_rate=args.learning_rate,
         group_by_prefix=args.group_by_prefix,
         grid_subplots=args.grid_subplots,
         figsize=tuple(args.figsize)
