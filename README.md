@@ -167,6 +167,86 @@ python filter_single_pairs.py --locks_file locks.tsv --keys_file keys.tsv --outp
 - `--output_locks`: Path for filtered locks output (required)
 - `--output_keys`: Path for filtered keys output (required)
 
+## Filter by Genomes
+
+Filter datasets to include all locks and keys from selected genomes/groups.
+
+### Usage
+
+```bash
+# Randomly select 50 genomes
+python filter_by_genomes.py --locks_file locks.tsv --keys_file keys.tsv --output_locks filtered_locks.tsv --output_keys filtered_keys.tsv --n_genomes 50
+
+# Select specific genomes
+python filter_by_genomes.py --locks_file locks.tsv --keys_file keys.tsv --output_locks filtered_locks.tsv --output_keys filtered_keys.tsv --genome_list GCA_000016305.1 GCA_000163455.1
+
+# Select genomes from a file
+python filter_by_genomes.py --locks_file locks.tsv --keys_file keys.tsv --output_locks filtered_locks.tsv --output_keys filtered_keys.tsv --genome_file genome_ids.txt
+```
+
+### Features
+
+- Select genomes randomly or by specific IDs
+- Extracts ALL locks and keys for selected genomes
+- Provides statistics on sequences per genome
+- Saves list of selected genomes for reproducibility
+
+### Output Files
+
+- Filtered lock and key TSV files
+- `selected_genomes.txt`: List of selected genome IDs
+- `genome_statistics.csv`: Statistics for each genome (number of locks/keys)
+
+### Command Line Arguments
+
+- `--locks_file`: Path to locks TSV file (required)
+- `--keys_file`: Path to keys TSV file (required)
+- `--output_locks`: Path for filtered locks output (required)
+- `--output_keys`: Path for filtered keys output (required)
+- `--n_genomes`: Number of genomes to randomly select
+- `--genome_list`: Specific genomes to select (space-separated)
+- `--genome_file`: File containing genome IDs (one per line)
+- `--random_seed`: Random seed for reproducible selection (default: 42)
+
+## Extract Clusters
+
+Extract and analyze clusters from UMAP coordinates to identify groups of similar sequences.
+
+### Usage
+
+```bash
+# Using DBSCAN (good for finding dense clusters)
+python extract_clusters.py --coords_file umap_plot.coords.csv --output_dir clusters --method dbscan --eps 0.5
+
+# Using K-means (when you know approximate number of clusters)
+python extract_clusters.py --coords_file umap_plot.coords.csv --output_dir clusters --method kmeans --n_clusters 5
+```
+
+### Features
+
+- Two clustering methods: DBSCAN and K-means
+- Automatic cluster number detection for K-means
+- Saves separate lists for each cluster
+- Generates visualization showing clusters
+- Provides statistics on cluster composition
+
+### Output Files
+
+- `clustered_data.csv`: Full data with cluster assignments
+- `cluster_X_all.txt`: All sequences in cluster X
+- `cluster_X_locks.txt`: Only lock sequences in cluster X
+- `cluster_X_keys.txt`: Only key sequences in cluster X
+- `cluster_visualization.png`: Plot showing clusters
+
+### Command Line Arguments
+
+- `--coords_file`: Path to UMAP coordinates CSV (required)
+- `--output_dir`: Directory for output files (required)
+- `--method`: Clustering method - dbscan or kmeans (default: dbscan)
+- `--eps`: DBSCAN epsilon parameter (default: 0.5)
+- `--min_samples`: DBSCAN minimum samples (default: 5)
+- `--n_clusters`: K-means cluster count (auto-detect if not specified)
+
 ## License
 
 MIT License
