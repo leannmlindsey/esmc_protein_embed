@@ -138,6 +138,30 @@ python visualize_embeddings.py --embeddings locks.npz keys.npz --labels locks ke
 - `--group_by_prefix`: Create additional plot colored by group prefix
 - `--figsize`: Figure size as width height (default: 12 8)
 
+## Filter Single Pairs
+
+Filter datasets to include only groups with exactly one lock and one key sequence.
+
+### Usage
+
+```bash
+python filter_single_pairs.py --locks_file locks.tsv --keys_file keys.tsv --output_locks filtered_locks.tsv --output_keys filtered_keys.tsv
+```
+
+### Features
+
+- Identifies groups by sequence ID prefix (everything before last underscore)
+- Filters to keep only groups with exactly 1 lock and 1 key
+- Preserves original file format
+- Provides statistics on filtering results
+
+### Command Line Arguments
+
+- `--locks_file`: Path to locks TSV file (required)
+- `--keys_file`: Path to keys TSV file (required)
+- `--output_locks`: Path for filtered locks output (required)
+- `--output_keys`: Path for filtered keys output (required)
+
 ## License
 
 MIT License
