@@ -72,13 +72,14 @@ def create_umap_visualization(embeddings_files, labels, output_file,
         fig1, ax1 = plt.subplots(1, 1, figsize=(10, 8))
         
         unique_labels = list(set(all_labels))
-        colors = {'locks': 'blue', 'keys': 'red'}  # Fixed colors for consistency
+        color_palette = sns.color_palette("husl", len(unique_labels))
+        colors = {label: color_palette[i] for i, label in enumerate(unique_labels)}
         markers = {'locks': 's', 'keys': 'o'}  # Square for locks, circle for keys
         
         for label in unique_labels:
             mask = [l == label for l in all_labels]
             points = embeddings_2d[mask]
-            ax1.scatter(points[:, 0], points[:, 1], c=colors.get(label, 'gray'), 
+            ax1.scatter(points[:, 0], points[:, 1], c=[colors[label]], 
                        marker=markers.get(label, 'o'), label=label, alpha=0.6, s=50)
         
         ax1.set_xlabel('UMAP 1')
@@ -94,39 +95,52 @@ def create_umap_visualization(embeddings_files, labels, output_file,
         print(f"Main visualization saved to {main_output}")
         plt.close()
         
-        # Create 6x6 grid of individual groups
-        unique_groups = sorted(list(set(all_groups)))[:36]  # Take first 36 groups
-        n_groups_to_plot = min(36, len(unique_groups))
+        # Create 3x3 grid of individual groups
+        unique_groups = sorted(list(set(all_groups)))[:9]  # Take first 9 groups
+        n_groups_to_plot = min(9, len(unique_groups))
         
-        fig2, axes = plt.subplots(6, 6, figsize=(20, 20))
+        fig2, axes = plt.subplots(3, 3, figsize=(15, 15))
         axes = axes.flatten()
+        
+        # Get the global UMAP coordinate ranges for consistent axes
+        x_min, x_max = embeddings_2d[:, 0].min(), embeddings_2d[:, 0].max()
+        y_min, y_max = embeddings_2d[:, 1].min(), embeddings_2d[:, 1].max()
+        x_margin = (x_max - x_min) * 0.05
+        y_margin = (y_max - y_min) * 0.05
         
         for idx, group in enumerate(unique_groups[:n_groups_to_plot]):
             ax = axes[idx]
             
             # Get points for this group
             group_mask = [g == group for g in all_groups]
-            group_points = embeddings_2d[group_mask]
-            group_labels = [all_labels[i] for i, m in enumerate(group_mask) if m]
+            group_indices = [i for i, m in enumerate(group_mask) if m]
             
-            # Plot with consistent colors and markers
-            for label in set(group_labels):
-                label_mask = [l == label for l in group_labels]
-                points = group_points[label_mask]
-                ax.scatter(points[:, 0], points[:, 1], c=colors.get(label, 'gray'),
-                          marker=markers.get(label, 'o'), label=label, alpha=0.8, s=100)
+            # Plot only this group's points, but maintain global coordinate system
+            for i in group_indices:
+                label = all_labels[i]
+                point = embeddings_2d[i]
+                ax.scatter(point[0], point[1], c=[colors[label]],
+                          marker=markers.get(label, 'o'), alpha=0.8, s=150)
             
-            ax.set_title(f'{group}', fontsize=8)
-            ax.set_xticks([])
-            ax.set_yticks([])
+            # Set consistent axis limits to match global UMAP
+            ax.set_xlim(x_min - x_margin, x_max + x_margin)
+            ax.set_ylim(y_min - y_margin, y_max + y_margin)
+            
+            ax.set_title(f'{group}', fontsize=10, fontweight='bold')
+            ax.set_xlabel('UMAP 1', fontsize=8)
+            ax.set_ylabel('UMAP 2', fontsize=8)
             ax.grid(True, alpha=0.3)
             
             # Add legend only to first subplot
             if idx == 0:
-                ax.legend(fontsize=6)
+                # Create dummy points for legend
+                for label in unique_labels:
+                    ax.scatter([], [], c=[colors[label]], marker=markers.get(label, 'o'), 
+                             label=label, s=100)
+                ax.legend(fontsize=8, loc='upper right')
         
         # Hide empty subplots
-        for idx in range(n_groups_to_plot, 36):
+        for idx in range(n_groups_to_plot, 9):
             axes[idx].set_visible(False)
         
         plt.tight_layout()

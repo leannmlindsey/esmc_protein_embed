@@ -127,7 +127,7 @@ python visualize_embeddings.py --embeddings locks.npz keys.npz --labels locks ke
 - UMAP dimensionality reduction for visualization
 - Color coding by lock/key labels (locks as squares, keys as circles)
 - Optional coloring by sequence group prefix
-- Grid visualization mode showing first 36 groups individually
+- Grid visualization mode (3x3) showing first 9 groups with preserved global coordinates
 - Exports UMAP coordinates to CSV
 - Customizable UMAP parameters
 
