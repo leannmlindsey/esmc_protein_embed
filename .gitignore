@@ -31,6 +31,8 @@ pyvenv.cfg
 Thumbs.db
 
 # Output files
+output/*
+!output/README.md
 *.npz
 *.pkl
 *.npy
