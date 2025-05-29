@@ -1,7 +1,10 @@
 import argparse
 import numpy as np
 import pickle
+import sys
 from pathlib import Path
+sys.path.append(str(Path(__file__).parent))
+
 from data_loader import create_protein_dataloader
 from esm_embedder import ESMCEmbedder
 

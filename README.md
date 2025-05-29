@@ -38,35 +38,35 @@ pip install umap-learn
 
 ```bash
 # Using default ESM-C 300M model
-python embed_proteins.py --input_file example_proteins.tsv --output_file output/embeddings.npz
+python src/embed_proteins.py --input_file example_proteins.tsv --output_file output/embeddings.npz
 
 # Using ESM-C 600M model for better accuracy
-python embed_proteins.py --input_file proteins.tsv --output_file output/embeddings.npz --model esmc_600m
+python src/embed_proteins.py --input_file proteins.tsv --output_file output/embeddings.npz --model esmc_600m
 ```
 
 ### 2. Visualize Embeddings
 
 ```bash
 # Visualize all embeddings with UMAP
-python visualize_embeddings.py --embeddings output/embeddings.npz --labels proteins --output output/umap_plot.png
+python src/visualize_embeddings.py --embeddings output/embeddings.npz --labels proteins --output output/umap_plot.png
 
 # Or use t-SNE for better separation
-python visualize_embeddings.py --embeddings output/embeddings.npz --labels proteins --output output/tsne_plot.png --method tsne
+python src/visualize_embeddings.py --embeddings output/embeddings.npz --labels proteins --output output/tsne_plot.png --method tsne
 
 # Visualize locks and keys separately with grid
-python visualize_embeddings.py --embeddings output/locks.npz output/keys.npz --labels locks keys --output output/umap_plot.png --grid_subplots
+python src/visualize_embeddings.py --embeddings output/locks.npz output/keys.npz --labels locks keys --output output/umap_plot.png --grid_subplots
 ```
 
 ### 3. Calculate Similarities
 
 ```bash
 # Calculate similarities between lock and key sets
-python calculate_similarity.py --locks_file output/locks.npz --keys_file output/keys.npz --output_file output/similarities.csv
+python src/calculate_similarity.py --locks_file output/locks.npz --keys_file output/keys.npz --output_file output/similarities.csv
 ```
 
 ## Core Components
 
-### 1. Embedding Generation (`embed_proteins.py`)
+### 1. Embedding Generation (`src/embed_proteins.py`)
 
 Converts protein sequences to high-dimensional embeddings using ESM-C models.
 
@@ -78,7 +78,7 @@ Converts protein sequences to high-dimensional embeddings using ESM-C models.
 
 **Usage:**
 ```bash
-python embed_proteins.py --input_file <input.tsv> --output_file output/<embeddings.npz> [options]
+python src/embed_proteins.py --input_file <input.tsv> --output_file output/<embeddings.npz> [options]
 ```
 
 **Options:**
@@ -92,29 +92,29 @@ python embed_proteins.py --input_file <input.tsv> --output_file output/<embeddin
 
 ### 2. Data Filtering Tools
 
-#### Filter Single Pairs (`filter_single_pairs.py`)
+#### Filter Single Pairs (`src/filter_single_pairs.py`)
 Extracts only groups with exactly one lock and one key sequence.
 
 ```bash
-python filter_single_pairs.py --locks_file locks.tsv --keys_file keys.tsv \
+python src/filter_single_pairs.py --locks_file locks.tsv --keys_file keys.tsv \
     --output_locks output/filtered_locks.tsv --output_keys output/filtered_keys.tsv
 ```
 
-#### Filter by Genomes (`filter_by_genomes.py`)
+#### Filter by Genomes (`src/filter_by_genomes.py`)
 Selects all sequences from specific genomes.
 
 ```bash
 # Select 50 random genomes
-python filter_by_genomes.py --locks_file locks.tsv --keys_file keys.tsv \
+python src/filter_by_genomes.py --locks_file locks.tsv --keys_file keys.tsv \
     --output_locks output/subset_locks.tsv --output_keys output/subset_keys.tsv --n_genomes 50
 
 # Select specific genomes
-python filter_by_genomes.py --locks_file locks.tsv --keys_file keys.tsv \
+python src/filter_by_genomes.py --locks_file locks.tsv --keys_file keys.tsv \
     --output_locks output/subset_locks.tsv --output_keys output/subset_keys.tsv \
     --genome_list GCA_000016305.1 GCA_000163455.1
 ```
 
-### 3. Similarity Calculation (`calculate_similarity.py`)
+### 3. Similarity Calculation (`src/calculate_similarity.py`)
 
 Calculates cosine similarities between lock and key embeddings within matching groups.
 
@@ -124,11 +124,11 @@ Calculates cosine similarities between lock and key embeddings within matching g
 - Outputs detailed statistics
 
 ```bash
-python calculate_similarity.py --locks_file output/locks.npz --keys_file output/keys.npz \
+python src/calculate_similarity.py --locks_file output/locks.npz --keys_file output/keys.npz \
     --output_file output/similarities.csv
 ```
 
-### 4. Visualization (`visualize_embeddings.py`)
+### 4. Visualization (`src/visualize_embeddings.py`)
 
 Creates UMAP or t-SNE visualizations of embedding spaces with multiple display options.
 
@@ -141,19 +141,19 @@ Creates UMAP or t-SNE visualizations of embedding spaces with multiple display o
 
 ```bash
 # Basic UMAP visualization
-python visualize_embeddings.py --embeddings output/embeddings.npz --labels sequences \
+python src/visualize_embeddings.py --embeddings output/embeddings.npz --labels sequences \
     --output output/umap_plot.png
 
 # Using t-SNE instead of UMAP
-python visualize_embeddings.py --embeddings output/embeddings.npz --labels sequences \
+python src/visualize_embeddings.py --embeddings output/embeddings.npz --labels sequences \
     --output output/tsne_plot.png --method tsne
 
 # Separate locks and keys with grid view
-python visualize_embeddings.py --embeddings output/locks.npz output/keys.npz \
+python src/visualize_embeddings.py --embeddings output/locks.npz output/keys.npz \
     --labels locks keys --output output/umap_plot.png --grid_subplots
 
 # t-SNE with custom parameters
-python visualize_embeddings.py --embeddings output/locks.npz --labels locks \
+python src/visualize_embeddings.py --embeddings output/locks.npz --labels locks \
     --output output/tsne_locks.png --method tsne --perplexity 50 --n_iter 2000
 ```
 
@@ -171,17 +171,17 @@ python visualize_embeddings.py --embeddings output/locks.npz --labels locks \
   - `--grid_subplots`: Create 3x3 grid of individual groups
   - `--group_by_prefix`: Color by sequence group prefix
 
-### 5. Cluster Extraction (`extract_clusters.py`)
+### 5. Cluster Extraction (`src/extract_clusters.py`)
 
 Identifies and extracts clusters from UMAP or t-SNE coordinates.
 
 ```bash
 # Using DBSCAN
-python extract_clusters.py --coords_file output/umap_plot.coords.csv \
+python src/extract_clusters.py --coords_file output/umap_plot.coords.csv \
     --output_dir output/clusters --method dbscan --eps 0.5
 
 # Using K-means with 5 clusters
-python extract_clusters.py --coords_file output/umap_plot.coords.csv \
+python src/extract_clusters.py --coords_file output/umap_plot.coords.csv \
     --output_dir output/clusters --method kmeans --n_clusters 5
 ```
 
