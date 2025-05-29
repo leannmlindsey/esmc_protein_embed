@@ -61,8 +61,6 @@ class ESMCEmbedder:
                     
             except Exception as e:
                 print(f"Error processing sequence {seq_id}: {str(e)}")
-                import traceback
-                traceback.print_exc()
                 continue
         
         return embeddings

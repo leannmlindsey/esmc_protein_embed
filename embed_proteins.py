@@ -33,16 +33,6 @@ def main():
         all_sequences.extend(zip(ids, sequences))
     
     print(f"Processing {len(all_sequences)} sequences")
-    
-    # Debug: print first few sequences to check format
-    print("\nFirst 3 sequences for debugging:")
-    for i, (seq_id, seq) in enumerate(all_sequences[:3]):
-        print(f"  ID: {seq_id}")
-        print(f"  Type: {type(seq)}")
-        print(f"  Sequence (first 50 chars): {str(seq)[:50]}...")
-        print(f"  Length: {len(str(seq))}")
-        print()
-    
     embeddings = embedder.embed_sequences(all_sequences, batch_size=args.batch_size)
     
     output_path = Path(args.output_file)

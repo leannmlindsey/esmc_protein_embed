@@ -5,13 +5,7 @@ from typing import List, Tuple
 class ProteinSequenceDataset(Dataset):
     def __init__(self, file_path: str, sequence_col: str = 'sequence', id_col: str = 'id'):
         # Read with explicit tab delimiter
-        self.df = pd.read_csv(file_path, sep='\t', dtype=str, engine='python')
-        
-        # Debug output
-        print(f"Loaded dataframe with columns: {list(self.df.columns)}")
-        print(f"Number of columns: {len(self.df.columns)}")
-        print(f"First few rows:")
-        print(self.df.head(3))
+        self.df = pd.read_csv(file_path, sep='\t', dtype=str)
         
         # Check if columns exist
         if sequence_col not in self.df.columns:
